@@ -1,0 +1,6 @@
+- id: fix-license-header
+  name: fix python license header
+  description: 'adds """(C) Copyright Corporate 2023 AG.""" to the top of python files.'
+  language: python
+  entry: fix-license-header
+  types: [python]
