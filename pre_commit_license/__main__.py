@@ -1,14 +1,25 @@
 # -*- coding: utf-8 -*-
+"""This module contains main logic."""
+
+
 from __future__ import annotations
 
 import argparse
 from typing import IO, NamedTuple, Sequence
 
 # TODO: replace with current year dynamically (if license added?)
-DEFAULT_LICENSE = b'"""(C) Corporate 2023 AG."""'
+DEFAULT_LICENSE = b'"""(C) Copyright Corporate 2023 AG."""'
 
 
-def has_coding(line: bytes) -> bool:
+def has_license(line: bytes) -> bool:
+    if not line.strip():
+        return False
+    return line.lstrip()[:3] == b'"""' and (
+        line.strip()[:-3] == b'"""' or b"(C)" in line or b"Copyright" in line
+    )
+
+
+def has_encoding(line: bytes) -> bool:
     if not line.strip():
         return False
     return line.lstrip()[:1] == b"#" and (
@@ -19,8 +30,15 @@ def has_coding(line: bytes) -> bool:
     )
 
 
+def has_shebang(line: bytes) -> bool:
+    if not line.strip():
+        return False
+    return line.startswith(b"#!")
+
+
 class ExpectedContents(NamedTuple):
     shebang: bytes
+    encoding: bytes
     rest: bytes
     # True: has exactly the license header expected
     # False: missing license header entirely
@@ -40,30 +58,44 @@ class ExpectedContents(NamedTuple):
 def _get_expected_contents(
     first_line: bytes,
     second_line: bytes,
+    third_line: bytes,
     rest: bytes,
     expected_license: bytes,
 ) -> ExpectedContents:
-    # TODO: add docstring match
     ending = b"\r\n" if first_line.endswith(b"\r\n") else b"\n"
 
-    if first_line.startswith(b"#!"):
+    # First line can be shebang, encoding pragma or license
+    if has_shebang(first_line):
         shebang = first_line
-        potential_coding = second_line
+        if has_encoding(second_line):
+            encoding = second_line
+            potential_license = third_line
+        else:
+            encoding = b""
+            potential_license = second_line
+            rest = third_line + rest
+    elif has_encoding(first_line):
+        shebang = b""
+        encoding = first_line
+        potential_license = second_line
+        rest = third_line + rest
     else:
         shebang = b""
-        potential_coding = first_line
+        encoding = b""
+        potential_license = first_line
         rest = second_line + rest
 
-    if potential_coding.rstrip(b"\r\n") == expected_license:
+    if potential_license.rstrip(b"\r\n") == expected_license:
         license_status: bool | None = True
-    elif has_coding(potential_coding):
+    elif has_license(potential_license):
         license_status = None
     else:
         license_status = False
-        rest = potential_coding + rest
+        rest = potential_license + rest
 
     return ExpectedContents(
         shebang=shebang,
+        encoding=encoding,
         rest=rest,
         license_status=license_status,
         ending=ending,
@@ -78,13 +110,14 @@ def fix_license_header(
     expected = _get_expected_contents(
         f.readline(),
         f.readline(),
+        f.readline(),
         f.read(),
         expected_license,
     )
 
     # Special cases for empty files
     if not expected.rest.strip():
-        # If a file only has a shebang or a coding pragma, remove it
+        # If a file only has a shebang or a license header, remove it
         if expected.has_any_license or expected.shebang:
             f.seek(0)
             f.truncate()
@@ -100,6 +133,7 @@ def fix_license_header(
     f.seek(0)
     f.truncate()
     f.write(expected.shebang)
+    f.write(expected.encoding)
     if not remove:
         f.write(expected_license + expected.ending)
     f.write(expected.rest)
