@@ -2,5 +2,5 @@
   name: fix python license header
   description: 'adds """(C) Copyright Corporate 2023 AG.""" to the top of python files.'
   language: python
-  entry: pre_commit_license
+  entry: pre-commit-license
   types: [python]
