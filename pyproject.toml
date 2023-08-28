@@ -10,6 +10,9 @@ packages = [{include = "pre_commit_license"}]
 [tool.poetry.dependencies]
 python = "^3.11"
 
+[tool.isort]
+profile = "black"
+
 [tool.coverage]
     [tool.coverage.run]
     omit = [
