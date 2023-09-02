@@ -1,9 +1,9 @@
 [tool.poetry]
 name = "pre-commit-license"
-version = "0.1.4"
-description = "Pre-commit hook for adding license in Python projects."
+version = "0.1.5"
+description = "Pre-commit hook for fixing license headers in Python scripts."
 authors = ["Mert Armagan Sari <mertarmagansari@gmail.com>"]
-license = "Apache License 2.0"
+license = "Apache-2.0"
 readme = "README.md"
 packages = [{include = "pre_commit_license"}]
 
@@ -11,7 +11,7 @@ packages = [{include = "pre_commit_license"}]
 python = "^3.11"
 
 [tool.poetry.scripts]
-check-license-header = "pre_commit_license.__main__:main"
+fix-license-header = "pre_commit_license.__main__:main"
 
 [tool.isort]
 profile = "black"

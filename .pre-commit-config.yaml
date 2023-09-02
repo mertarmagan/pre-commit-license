@@ -45,6 +45,6 @@ repos:
         pass_filenames: false
         always_run: true
   # - repo: https://github.com/mertarmagan/pre-commit-license
-  #   rev: "v0.1.0"
+  #   rev: "v0.1.5"
   #   hooks:
   #     - id: fix-license-header

@@ -9,6 +9,8 @@ import argparse
 from typing import IO, NamedTuple, Sequence
 
 # TODO: replace with current year dynamically (if license added?)
+# TODO: try without shebang
+# TODO: parse docstrings if exist and append license at the end
 DEFAULT_LICENSE = b'"""(C) Copyright Corporate 2023 AG."""'
 
 
