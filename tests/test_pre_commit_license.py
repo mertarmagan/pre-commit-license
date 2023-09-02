@@ -8,35 +8,43 @@ import pytest
 from pre_commit_license.__main__ import _normalize_license, fix_license_header, main
 
 
-def test_integration_inserting_pragma(tmpdir):
-    path = tmpdir.join("foo.py")
-    path.write_binary(b"import httplib\n")
+def test_integration_inserting_license(tmp_path):
+    path = tmp_path / "foo.py"
+    with open(path, "wb") as file:
+        file.write(b"import httplib\n")
 
     assert main((str(path),)) == 1
 
-    assert path.read_binary() == (
-        b'"""(C) Copyright Corporate 2023 AG."""\n' b"import httplib\n"
-    )
+    with open(path, "rb") as file:
+        assert file.read() == (
+            b'"""(C) Copyright Corporate 2023 AG."""\n' b"import httplib\n"
+        )
 
 
-def test_integration_ok(tmpdir):
-    path = tmpdir.join("foo.py")
-    path.write_binary(b'"""(C) Copyright Corporate 2023 AG."""\nx = 1\n')
+def test_integration_ok(tmp_path):
+    path = tmp_path / "foo.py"
+    with open(path, "wb") as file:
+        file.write(b'"""(C) Copyright Corporate 2023 AG."""\nx = 1\n')
+
     assert main((str(path),)) == 0
 
 
-def test_integration_remove(tmpdir):
-    path = tmpdir.join("foo.py")
-    path.write_binary(b'"""(C) Copyright Corporate 2023 AG."""\nx = 1\n')
+def test_integration_remove(tmp_path):
+    path = tmp_path / "foo.py"
+    with open(path, "wb") as file:
+        file.write(b'"""(C) Copyright Corporate 2023 AG."""\nx = 1\n')
 
     assert main((str(path), "--remove")) == 1
 
-    assert path.read_binary() == b"x = 1\n"
+    with open(path, "rb") as file:
+        assert file.read() == b"x = 1\n"
 
 
-def test_integration_remove_ok(tmpdir):
-    path = tmpdir.join("foo.py")
-    path.write_binary(b"x = 1\n")
+def test_integration_remove_ok(tmp_path):
+    path = tmp_path / "foo.py"
+    with open(path, "wb") as file:
+        file.write(b"x = 1\n")
+
     assert main((str(path), "--remove")) == 0
 
 
@@ -126,25 +134,36 @@ def test_normalize_license(input_s, expected):
     assert _normalize_license(input_s) == expected
 
 
-def test_integration_alternate_license(tmpdir, capsys):
-    f = tmpdir.join("f.py")
-    f.write("x = 1\n")
+def test_integration_alternate_license(tmp_path, capsys):
+    path = tmp_path / "foo.py"
+
+    with open(path, "wb") as file:
+        file.write(b"x = 1\n")
 
     license = '"""(C) Copyright"""'
-    assert main((str(f), "--license", license)) == 1
-    assert f.read() == '"""(C) Copyright"""\nx = 1\n'
+    assert main((str(path), "--license", license)) == 1
+
+    with open(path, "rb") as file:
+        assert file.read() == b'"""(C) Copyright"""\nx = 1\n'
+
     out, _ = capsys.readouterr()
-    assert out == f'Added `"""(C) Copyright"""` to {str(f)}\n'
+    assert out == f'Added `"""(C) Copyright"""` to {str(path)}\n'
 
 
-def test_crlf_ok(tmpdir):
-    f = tmpdir.join("f.py")
-    f.write_binary(b'"""(C) Copyright Corporate 2023 AG."""\r\nx = 1\r\n')
-    assert not main((str(f),))
+def test_crlf_ok(tmp_path):
+    path = tmp_path / "foo.py"
+    with open(path, "wb") as file:
+        file.write(b'"""(C) Copyright Corporate 2023 AG."""\r\nx = 1\r\n')
+
+    assert main((str(path),)) == 0
 
 
-def test_crfl_adds(tmpdir):
-    f = tmpdir.join("f.py")
-    f.write_binary(b"x = 1\r\n")
-    assert main((str(f),))
-    assert f.read_binary() == b'"""(C) Copyright Corporate 2023 AG."""\r\nx = 1\r\n'
+def test_crfl_adds(tmp_path):
+    path = tmp_path / "foo.py"
+    with open(path, "wb") as file:
+        file.write(b"x = 1\r\n")
+
+    assert main((str(path),)) == 1
+
+    with open(path, "rb") as file:
+        assert file.read() == b'"""(C) Copyright Corporate 2023 AG."""\r\nx = 1\r\n'
